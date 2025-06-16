@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 # controller for managing merge rollback
-module Dde
+module DdeMahis
   module Api
     module V1
-      class Api::V1::RollbackController < ApplicationController
+      class RollbackController < ApplicationController
         def merge_history
           identifier = params.require(:identifier)
           render json: merge_service.get_patient_audit(identifier), status: :ok

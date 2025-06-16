@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-module Dde
+# module DdeMahis
   ##
-  # Matches local and remote (Dde) people.
+  # Matches local and remote (DdeMahis) people.
   #
   # TODO: Move module to own file
   class Matcher
@@ -89,4 +89,4 @@ module Dde
     end
   end
 
-end
+# end

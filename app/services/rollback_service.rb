@@ -2,15 +2,15 @@
 
 # this class will basically handle rolling back patients that were merged
 # rubocop:disable Metrics/ClassLength
-class Dde::RollbackService
+class RollbackService
   attr_accessor :primary_patient, :secondary_patient, :merge_type, :visit_type
 
-  Dde_CONFIG_PATH = 'config/application.yml'
+  DdeMahis_CONFIG_PATH = 'config/application.yml'
 
   # rubocop:disable Metrics/MethodLength
   def rollback_merged_patient(patient_id, visit_type_id)
     @visit_type = VisitType.find(visit_type_id)
-    tree = Dde::MergeAuditService.new.fetch_merge_audit(patient_id)
+    tree = MergeAuditService.new.fetch_merge_audit(patient_id)
     ActiveRecord::Base.transaction do
       tree.each do |record|
         @primary_patient = record['primary_id']
@@ -47,7 +47,7 @@ class Dde::RollbackService
       SELECT identifier
       FROM patient_identifier
       WHERE patient_id = #{patient_id}
-      AND identifier_type = #{PatientIdentifierType.find_by_name!('Dde person document ID').id}
+      AND identifier_type = #{PatientIdentifierType.find_by_name!('DdeMahis person document ID').id}
     SQL
     result.blank? ? nil : result['identifier']
   end
@@ -59,7 +59,7 @@ class Dde::RollbackService
                                        primary_person_doc_id: fetch_patient_doc_id(primary_patient),
                                        secondary_person_doc_id: fetch_patient_doc_id(secondary_patient))
 
-    raise "Failed to rollback patients on Dde side: #{status} - #{response}" unless status == 200
+    raise "Failed to rollback patients on DdeMahis side: #{status} - #{response}" unless status == 200
   end
 
   # this is the method to rollback patient name
@@ -304,11 +304,11 @@ class Dde::RollbackService
 
   # Loads a dde client into the dde_clients_cache for the
   def dde_config
-    main_config = YAML.load_file(Dde_CONFIG_PATH)['dde']
-    raise 'No configuration for Dde found' unless main_config
+    main_config = YAML.load_file(DdeMahis_CONFIG_PATH)['dde']
+    raise 'No configuration for DdeMahis found' unless main_config
 
     visit_type_config = main_config[visit_type.name.downcase]
-    raise "No Dde config for visit_type #{visit_type.name} found" unless visit_type_config
+    raise "No DdeMahis config for visit_type #{visit_type.name} found" unless visit_type_config
 
     {
       url: main_config['url'],

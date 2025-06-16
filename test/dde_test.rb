@@ -1,7 +1,7 @@
 require "test_helper"
 
-class DdeTest < ActiveSupport::TestCase
+class DdeMahisTest < ActiveSupport::TestCase
   test "it has a version number" do
-    assert Dde::VERSION
+    assert DdeMahis::VERSION
   end
 end

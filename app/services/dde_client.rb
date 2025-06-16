@@ -3,24 +3,24 @@
 require 'logger'
 require 'restclient'
 
-class Dde::DdeClient
+class DdeClient
   def initialize
     @auto_login = true # If logged out, automatically login on next request
     @base_url = nil
     @connection = nil
   end
 
-  # Connect to Dde Web Service using either a configuration file
+  # Connect to DdeMahis Web Service using either a configuration file
   # or an old Connection.
   #
-  # @return A Connection object that can be used to re-connect to Dde
+  # @return A Connection object that can be used to re-connect to DdeMahis
   def connect(url:, username:, password:)
     @connection = establish_connection(url: url, username: username, password: password)
   end
 
-  # Reconnect to Dde using previous connection
+  # Reconnect to DdeMahis using previous connection
   #
-  # @see: DdeClient#connect
+  # @see: DdeMahisClient#connect
   def restore_connection(connection)
     @connection = reload_connection(connection)
   end
@@ -53,14 +53,14 @@ class Dde::DdeClient
 
   JSON_CONTENT_TYPE = 'application/json'
   LOGGER = Logger.new(STDOUT)
-  Dde_API_KEY_VALIDITY_PERIOD = 3600 * 12
-  Dde_VERSION = 'v1'
+  DdeMahis_API_KEY_VALIDITY_PERIOD = 3600 * 12
+  DdeMahis_VERSION = 'v1'
 
-  # Reload old connection to Dde
+  # Reload old connection to DdeMahis
   def reload_connection(connection)
-    LOGGER.debug 'Loading Dde connection'
+    LOGGER.debug 'Loading DdeMahis connection'
     if connection[:expires] < Time.now
-      LOGGER.debug 'Dde connection expired'
+      LOGGER.debug 'DdeMahis connection expired'
       establish_connection(connection[:config])
     else
       @base_url = connection[:config][:url]
@@ -68,11 +68,11 @@ class Dde::DdeClient
     end
   end
 
-  # Establish a connection to Dde
+  # Establish a connection to DdeMahis
   #
-  # NOTE: This simply involves logging into Dde
+  # NOTE: This simply involves logging into DdeMahis
   def establish_connection(url:, username:, password:)
-    LOGGER.debug 'Establishing new connection to Dde from configuration'
+    LOGGER.debug 'Establishing new connection to DdeMahis from configuration'
 
     # Block any automatic logins when processing request to avoid infinite loop
     # in request execution below... Under normal circumstances request execution
@@ -89,20 +89,20 @@ class Dde::DdeClient
     @auto_login = true
 
     if status != 200
-      raise StandardError, "Unable to establish connection to Dde: #{response}"
+      raise StandardError, "Unable to establish connection to DdeMahis: #{response}"
     end
 
-    LOGGER.info('Connection to Dde established :)')
+    LOGGER.info('Connection to DdeMahis established :)')
     @connection = {
       key: response['access_token'],
-      expires: Time.now + Dde_API_KEY_VALIDITY_PERIOD,
+      expires: Time.now + DdeMahis_API_KEY_VALIDITY_PERIOD,
       config: { url: url, username: username, password: password }
     }
   end
 
   # Returns a URI object with API host attached
   def build_uri(resource)
-    "#{@base_url}/#{Dde_VERSION}/#{resource}"
+    "#{@base_url}/#{DdeMahis_VERSION}/#{resource}"
   end
 
   def headers
@@ -113,29 +113,29 @@ class Dde::DdeClient
   end
 
   def exec_request(resource)
-    LOGGER.debug "Executing Dde request (#{resource})"
+    LOGGER.debug "Executing DdeMahis request (#{resource})"
     response = yield build_uri(resource), headers
-    LOGGER.debug "Handling Dde response:\n\tStatus - #{response.code}\n\tBody - #{response.body}"
+    LOGGER.debug "Handling DdeMahis response:\n\tStatus - #{response.code}\n\tBody - #{response.body}"
     handle_response response
   rescue RestClient::Unauthorized => e
-    LOGGER.error "DdeClient suppressed exception: #{e}"
+    LOGGER.error "DdeMahisClient suppressed exception: #{e}"
     return handle_response e.response unless @auto_login
 
-    LOGGER.debug 'Auto-logging into Dde...'
+    LOGGER.debug 'Auto-logging into DdeMahis...'
     establish_connection(@connection[:config])
     LOGGER.debug "Reset connection: #{@connection}"
     retry # Retry last request...
   rescue RestClient::BadRequest => e
-    LOGGER.error "DdeClient suppressed exception: #{e}"
+    LOGGER.error "DdeMahisClient suppressed exception: #{e}"
     handle_response e.response
   rescue RestClient::UnprocessableEntity => e
-    LOGGER.error "DdeClient suppressed exception: #{e}"
+    LOGGER.error "DdeMahisClient suppressed exception: #{e}"
     handle_response e.response
   rescue RestClient::NotFound => e
-    LOGGER.error "DdeClient suppressed exception: #{e}"
+    LOGGER.error "DdeMahisClient suppressed exception: #{e}"
     handle_response e.response
   rescue RestClient::InternalServerError => e
-    LOGGER.error "DdeClient suppressed exceptionnnn: #{e}"
+    LOGGER.error "DdeMahisClient suppressed exceptionnnn: #{e}"
     handle_response e.response
   end
 
@@ -143,7 +143,7 @@ class Dde::DdeClient
     # 204 is no content response, no further processing required.
     return nil, 204 if response.code.to_i == 204
 
-    # NOTE: Following is commented out as Dde at the moment is quite liberal
+    # NOTE: Following is commented out as DdeMahis at the moment is quite liberal
     # in how it responds to various requests. It seems to know no difference
     # between 'application/json' and 'text/plain'.
     #
@@ -152,7 +152,7 @@ class Dde::DdeClient
     #   return nil, 0
     # end
 
-    # Dde is somewhat undecided on how it reports back its status code.
+    # DdeMahis is somewhat undecided on how it reports back its status code.
     # Sometimes we get a proper HTTP status code and sometimes it is within
     # the response body.
     # response_status = response.code || response.body['status']

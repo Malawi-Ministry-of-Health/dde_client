@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class Dde::DdeService
+class DdeService
   require_relative './matcher'
 
-  class DdeError < StandardError; end
+  class DdeMahisError < StandardError; end
 
-  Dde_CONFIG_PATH = Rails.root.join('config', 'dde.yml')
+  DdeMahis_CONFIG_PATH = Rails.root.join('config', 'dde.yml')
   LOGGER = Rails.logger
 
   # Limit all find queries for local patients to this
@@ -33,24 +33,24 @@ class Dde::DdeService
   end
 
   def test_connection
-    response = { connection_available:  false, message: 'No connection to Dde', status: 500 }
+    response = { connection_available:  false, message: 'No connection to DdeMahis', status: 500 }
     begin
       result, status = dde_client
       response[:connection_available] = status == 200
       response[:message] = result
     rescue StandardError => exception
-      LOGGER.error "Failed to connect to Dde: #{exception.message}"
+      LOGGER.error "Failed to connect to DdeMahis: #{exception.message}"
       response[:message] = exception.message
     end
     response
   end
 
-  # Registers local OpenMRS patient in Dde
+  # Registers local OpenMRS patient in DdeMahis
   #
   # On success patient get two identifiers under the types
-  # 'Dde person document ID' and 'National id'. The
-  # 'Dde person document ID' is the patient's record ID in the local
-  # Dde instance and the 'National ID' is the national unique identifier
+  # 'DdeMahis person document ID' and 'National id'. The
+  # 'DdeMahis person document ID' is the patient's record ID in the local
+  # DdeMahis instance and the 'National ID' is the national unique identifier
   # for the patient.
   def create_patient(patient)
     push_local_patient_to_dde(patient)
@@ -58,13 +58,13 @@ class Dde::DdeService
 
   def remaining_npids
     response, status = dde_client.get("/location_npid_status?location_id=#{Location.current_location.id}")
-    raise DdeError, "Failed to fetch remaining npids: #{status} - #{response}" unless status == 200
+    raise DdeMahisError, "Failed to fetch remaining npids: #{status} - #{response}" unless status == 200
 
     response
   end
 
   def void_patient(patient, reason)
-    raise ArgumentError, "Can't request a Dde void for a non-voided patient" unless patient.voided?
+    raise ArgumentError, "Can't request a DdeMahis void for a non-voided patient" unless patient.voided?
     raise ArgumentError, 'void_reason is required' if reason.blank?
 
     doc_id = PatientIdentifier.unscoped
@@ -75,30 +75,30 @@ class Dde::DdeService
     return patient unless doc_id
 
     response, status = dde_client.delete("void_person/#{doc_id}?void_reason=#{reason}")
-    raise DdeError, "Failed to void person in Dde: #{status} - #{response}" unless status == 200
+    raise DdeMahisError, "Failed to void person in DdeMahis: #{status} - #{response}" unless status == 200
 
     patient
   end
 
-  # Updates patient demographics in Dde.
+  # Updates patient demographics in DdeMahis.
   #
   # Local patient is not affected in anyway by the update
   def update_patient(patient)
     dde_patient = openmrs_to_dde_patient(patient)
     response, status = dde_client.post('update_person', dde_patient)
 
-    raise DdeError, "Failed to update person in Dde: #{response}" unless status == 200
+    raise DdeMahisError, "Failed to update person in DdeMahis: #{response}" unless status == 200
 
     patient
   end
 
   ##
-  # Pushes a footprint for patient in current visit_type to Dde
+  # Pushes a footprint for patient in current visit_type to DdeMahis
   def create_patient_footprint(patient, date = nil, creator_id = nil)
-    LOGGER.debug("Pushing footprint to Dde for patient ##{patient.patient_id}")
+    LOGGER.debug("Pushing footprint to DdeMahis for patient ##{patient.patient_id}")
     doc_id = find_patient_doc_id(patient)
     unless doc_id
-      LOGGER.debug("Patient ##{patient.patient_id} is not a Dde patient")
+      LOGGER.debug("Patient ##{patient.patient_id} is not a DdeMahis patient")
       return
     end
 
@@ -108,22 +108,22 @@ class Dde::DdeService
                                                            encounter_datetime: date || Date.tody,
                                                            user_id: creator_id || User.current.user_id)
 
-    LOGGER.warn("Failed to push patient footprint to Dde: #{status} - #{response}") unless status == 200
+    LOGGER.warn("Failed to push patient footprint to DdeMahis: #{status} - #{response}") unless status == 200
   end
 
   ##
-  # Updates local patient with demographics currently in Dde.
+  # Updates local patient with demographics currently in DdeMahis.
   def update_local_patient(patient, update_npid: false)
     doc_id = patient_doc_id(patient)
     unless doc_id
-      Rails.logger.warn("No Dde doc_id found for patient ##{patient.patient_id}")
+      Rails.logger.warn("No DdeMahis doc_id found for patient ##{patient.patient_id}")
       push_local_patient_to_dde(patient)
       return patient
     end
 
     dde_patient = find_remote_patients_by_doc_id(doc_id).first
     unless dde_patient
-      Rails.logger.warn("Couldn't find patient ##{patient.patient_id} in Dde by doc_id ##{doc_id}")
+      Rails.logger.warn("Couldn't find patient ##{patient.patient_id} in DdeMahis by doc_id ##{doc_id}")
       push_local_patient_to_dde(patient)
       return patient
     end
@@ -137,16 +137,16 @@ class Dde::DdeService
     patient
   end
 
-  # Import patients from Dde using doc id
+  # Import patients from DdeMahis using doc id
   def import_patients_by_doc_id(doc_id)
-    doc_id_type = patient_identifier_type('Dde person document id')
+    doc_id_type = patient_identifier_type('DdeMahis person document id')
     locals = patient_service.find_patients_by_identifier(doc_id, doc_id_type).limit(PATIENT_SEARCH_RESULTS_LIMIT)
     remotes = find_remote_patients_by_doc_id(doc_id)
 
     import_remote_patient(locals, remotes)
   end
 
-  # Imports patients from Dde to the local database
+  # Imports patients from DdeMahis to the local database
   def import_patients_by_npid(npid)
     doc_id_type = patient_identifier_type('National id')
     locals = patient_service.find_patients_by_identifier(npid, doc_id_type).limit(PATIENT_SEARCH_RESULTS_LIMIT)
@@ -189,7 +189,7 @@ class Dde::DdeService
   end
 
   def find_patient_updates(local_patient_id)
-    dde_doc_id_type = PatientIdentifierType.where(name: 'Dde Person Document ID')
+    dde_doc_id_type = PatientIdentifierType.where(name: 'DdeMahis Person Document ID')
     doc_id = PatientIdentifier.find_by(patient_id: local_patient_id, identifier_type: dde_doc_id_type)
                               &.identifier
     return nil unless doc_id
@@ -198,8 +198,8 @@ class Dde::DdeService
     return nil unless remote_patient
 
     Matcher.find_differences(Person.find(local_patient_id), remote_patient)
-  rescue DdeError => e
-    Rails.logger.warn("Check for Dde patient updates failed: #{e.message}")
+  rescue DdeMahisError => e
+    Rails.logger.warn("Check for DdeMahis patient updates failed: #{e.message}")
     nil
   end
 
@@ -220,19 +220,19 @@ class Dde::DdeService
                        }
     )
 
-    raise DdeError, "Dde patient search failed: #{status} - #{response}" unless status == 200
+    raise DdeMahisError, "DdeMahis patient search failed: #{status} - #{response}" unless status == 200
 
     response.collect do |match|
       doc_id = match['person']['id']
       patient = patient_service.find_patients_by_identifier(
-        doc_id, patient_identifier_type('Dde person document id')
+        doc_id, patient_identifier_type('DdeMahis person document id')
       ).first
       match['person']['patient_id'] = patient&.id
       match
     end
   end
 
-  # Trigger a merge of patients in Dde
+  # Trigger a merge of patients in DdeMahis
   def merge_patients(primary_patients_ids, secondary_patient_ids)
     merging_service.merge_patients(primary_patients_ids, secondary_patient_ids)
   end
@@ -249,11 +249,11 @@ class Dde::DdeService
     end
 
     # NOTE: Fail patient retrieval as early as possible before making any
-    # changes to Dde (ie if patient_id does not exist)
+    # changes to DdeMahis (ie if patient_id does not exist)
     patient = patient_id.blank? ? nil : Patient.find(patient_id)
 
-    # We have a doc_id thus we can re-assign npid in Dde
-    # Check if person if available in Dde if not add person using doc_id
+    # We have a doc_id thus we can re-assign npid in DdeMahis
+    # Check if person if available in DdeMahis if not add person using doc_id
     response, status = dde_client.post('search_by_doc_id', doc_id: doc_id)
     if !response.blank? && status.to_i == 200
       response, status = dde_client.post('reassign_npid', doc_id: doc_id)
@@ -262,9 +262,9 @@ class Dde::DdeService
     end
 
     unless status == 200 && !response.empty?
-      # The Dde's reassign_npid end point responds with a 200 - OK but returns
+      # The DdeMahis's reassign_npid end point responds with a 200 - OK but returns
       # an empty object when patient with given doc_id is not found.
-      raise DdeError, "Failed to reassign npid: Dde Response => #{status} - #{response}"
+      raise DdeMahisError, "Failed to reassign npid: DdeMahis Response => #{status} - #{response}"
     end
 
     return save_remote_patient(response) unless patient
@@ -272,11 +272,11 @@ class Dde::DdeService
     merging_service.link_local_to_remote_patient(patient, response)
   end
 
-  # Convert a Dde person to an openmrs person.
+  # Convert a DdeMahis person to an openmrs person.
   #
   # NOTE: This creates a person on the database.
   def save_remote_patient(remote_patient)
-    LOGGER.debug "Converting Dde person to openmrs: #{remote_patient}"
+    LOGGER.debug "Converting DdeMahis person to openmrs: #{remote_patient}"
     params = dde_patient_to_local_person(remote_patient)
 
     Person.transaction do
@@ -337,7 +337,7 @@ class Dde::DdeService
 
   def find_remote_patients_by_npid(npid)
     response, _status = dde_client.post('search_by_npid', npid: npid)
-    raise DdeError, "Patient search by npid failed: Dde Response => #{response}" unless response.instance_of?(Array)
+    raise DdeMahisError, "Patient search by npid failed: DdeMahis Response => #{response}" unless response.instance_of?(Array)
 
     response
   end
@@ -349,11 +349,11 @@ class Dde::DdeService
                                                                      family_name: family_name,
                                                                      gender: gender)
       unless response.instance_of?(Array)
-        print "Patient search by name and gender failed: Dde Response => #{response}"
+        print "Patient search by name and gender failed: DdeMahis Response => #{response}"
         return []
       end
     rescue StandardError => e
-      print "Patient search by name and gender failed: Dde Response => #{e}"
+      print "Patient search by name and gender failed: DdeMahis Response => #{e}"
       return []
     end
 
@@ -361,9 +361,9 @@ class Dde::DdeService
   end
 
   def find_remote_patients_by_doc_id(doc_id)
-    Rails.logger.info("Searching for Dde patient by doc_id ##{doc_id}")
+    Rails.logger.info("Searching for DdeMahis patient by doc_id ##{doc_id}")
     response, _status = dde_client.post('search_by_doc_id', doc_id: doc_id)
-    raise DdeError, "Patient search by doc_id failed: Dde Response => #{response}" unless response.instance_of?(Array)
+    raise DdeMahisError, "Patient search by doc_id failed: DdeMahis Response => #{response}" unless response.instance_of?(Array)
 
     response
   end
@@ -443,7 +443,7 @@ class Dde::DdeService
       remote_patients = []
     elsif auto_push_singular_local && resolved_patients.size == 1\
          && remote_patients.empty? && local_only_patient?(resolved_patients.first)
-      # ANOTHER HACK: Push local only patient to Dde
+      # ANOTHER HACK: Push local only patient to DdeMahis
       resolved_patients = [push_local_patient_to_dde(resolved_patients[0])]
     else
       resolved_patients = local_patients
@@ -455,7 +455,7 @@ class Dde::DdeService
   # Checks if patient only exists on local database
   def local_only_patient?(patient)
     !(patient.patient_identifiers.where(identifier_type: patient_identifier_type('National id')).exists?\
-      && patient.patient_identifiers.where(identifier_type: patient_identifier_type('Dde person document id')).exists?)
+      && patient.patient_identifiers.where(identifier_type: patient_identifier_type('DdeMahis person document id')).exists?)
   end
 
   # Matches local and remote patient
@@ -465,14 +465,14 @@ class Dde::DdeService
     end
   end
 
-  # Saves local patient to Dde and links the two using the IDs
-  # generated by Dde.
+  # Saves local patient to DdeMahis and links the two using the IDs
+  # generated by DdeMahis.
   def push_local_patient_to_dde(patient)
-    Rails.logger.info("Pushing local patient ##{patient.patient_id} to Dde")
+    Rails.logger.info("Pushing local patient ##{patient.patient_id} to DdeMahis")
     response, status = dde_client.post('add_person', openmrs_to_dde_patient(patient))
 
     if status == 422
-      error = UnprocessableEntityError.new("Failed to create patient in Dde: #{response.to_json}")
+      error = UnprocessableEntityError.new("Failed to create patient in DdeMahis: #{response.to_json}")
       error.add_entity(patient)
       raise error
     end
@@ -482,7 +482,7 @@ class Dde::DdeService
     merging_service.link_local_to_remote_patient(patient, response)
   end
 
-  # Converts a remote patient coming from Dde into a structure similar
+  # Converts a remote patient coming from DdeMahis into a structure similar
   # to that of a local patient
   def localise_remote_patient(patient)
     Patient.new(
@@ -501,7 +501,7 @@ class Dde::DdeService
     [PatientIdentifier.new(identifier: remote_patient['npid'],
                            identifier_type: patient_identifier_type('National ID')),
      PatientIdentifier.new(identifier: remote_patient['doc_id'],
-                           identifier_type: patient_identifier_type('Dde Person Document ID'))]
+                           identifier_type: patient_identifier_type('DdeMahis Person Document ID'))]
   end
 
   def localise_remote_patient_names(remote_patient)
@@ -522,7 +522,7 @@ class Dde::DdeService
   end
 
   def dde_client
-    client = Dde::DdeClient.new
+    client = DdeClient.new
 
     connection = dde_connections[visit_type.id]
 
@@ -539,11 +539,11 @@ class Dde::DdeService
 
   # Loads a dde client into the dde_clients_cache for the
   def dde_config
-    main_config = YAML.load_file(Dde_CONFIG_PATH)['config']
-    raise 'No configuration for Dde found' unless main_config
+    main_config = YAML.load_file(DdeMahis_CONFIG_PATH)['config']
+    raise 'No configuration for DdeMahis found' unless main_config
 
     visit_type_config = main_config[visit_type.name.downcase]
-    raise "No Dde config for visit_type #{visit_type.name.downcase} found" unless visit_type_config
+    raise "No DdeMahis config for visit_type #{visit_type.name.downcase} found" unless visit_type_config
 
     {
       url: main_config['url'],
@@ -552,7 +552,7 @@ class Dde::DdeService
     }
   end
 
-  # Converts an openmrs patient structure to a Dde person structure
+  # Converts an openmrs patient structure to a DdeMahis person structure
   def openmrs_to_dde_patient(patient)
     LOGGER.debug "Converting OpenMRS person to dde_patient: #{patient}"
     person = patient.person
@@ -578,7 +578,7 @@ class Dde::DdeService
       }
     )
 
-    doc_id = patient.patient_identifiers.where(identifier_type: patient_identifier_type('Dde person document id')).first
+    doc_id = patient.patient_identifiers.where(identifier_type: patient_identifier_type('DdeMahis person document id')).first
     dde_patient[:doc_id] = doc_id.identifier if doc_id
 
     LOGGER.debug "Converted openmrs person to dde_patient: #{dde_patient}"
@@ -607,19 +607,19 @@ class Dde::DdeService
   def patient_doc_id(patient)
     PatientIdentifier
       .joins(:identifier_type)
-      .merge(PatientIdentifierType.where(name: 'Dde person document id'))
+      .merge(PatientIdentifierType.where(name: 'DdeMahis person document id'))
       .where(patient: patient)
       .first
       &.identifier
   end
 
   def dde_doc_id_type
-    PatientIdentifierType.find_by_name('Dde Person document ID')
+    PatientIdentifierType.find_by_name('DdeMahis Person document ID')
   end
 
   def find_patients_by_doc_id(doc_ids)
     identifiers = PatientIdentifier.joins(:identifier_type)
-                                   .merge(PatientIdentifierType.where(name: 'Dde Person Document ID'))
+                                   .merge(PatientIdentifierType.where(name: 'DdeMahis Person Document ID'))
                                    .where(identifier: doc_ids)
     Patient.joins(:identifiers).merge(identifiers).distinct
   end
@@ -633,7 +633,7 @@ class Dde::DdeService
   end
 
   def merging_service
-    Dde::MergingService.new(self, -> { dde_client })
+    MergingService.new(self, -> { dde_client })
   end
 
   # A cache for all connections to dde (indexed by visit_type id)

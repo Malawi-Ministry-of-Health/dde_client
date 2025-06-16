@@ -1,3 +1,3 @@
 Rails.application.routes.draw do
-  mount Dde::Engine => "/dde"
+  mount DdeMahis::Engine => "/dde"
 end

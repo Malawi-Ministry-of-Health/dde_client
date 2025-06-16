@@ -1,11 +1,11 @@
-require_relative "lib/dde/version"
+require_relative "lib/dde_mahis/version"
 
 Gem::Specification.new do |spec|
-  spec.name        = "dde"
-  spec.version     = Dde::VERSION
-  spec.authors     = ["bryan-mw"]
-  spec.email       = ["brianmsyamboza@gmail.com"]
-  spec.homepage    = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-plugin"
+  spec.name        = "dde_mahis"
+  spec.version     = DdeMahis::VERSION
+  spec.authors     = ["brian-mw"]
+  spec.email       = ["bmsyamboza@pedaids.org"]
+  spec.homepage    = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-mahis"
   spec.summary     = "DDE stands for Demographics Data Exchange. Its main purpose is to manage patient IDs."
   spec.license     = "MIT"
 
@@ -14,8 +14,8 @@ Gem::Specification.new do |spec|
   # spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-plugin"
-  spec.metadata["changelog_uri"] = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-plugin/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-mahis"
+  spec.metadata["changelog_uri"] = "https://github.com/orgs/Malawi-Ministry-of-Health/dde-mahis/CHANGELOG.md"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]

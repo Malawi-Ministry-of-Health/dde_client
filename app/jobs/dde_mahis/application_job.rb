@@ -1,4 +1,4 @@
-module Dde
+# module DdeMahis
   class ApplicationJob < ActiveJob::Base
   end
-end
+# end

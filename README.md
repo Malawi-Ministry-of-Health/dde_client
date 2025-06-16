@@ -1,4 +1,4 @@
-# Dde
+# DdeMahis
 DDE stands for Demographics Data Exchange. Its main purpose is to manage patient IDs
 
 ## Usage

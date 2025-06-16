@@ -2,16 +2,16 @@
 
 # An extension to the DdeService that provides merging functionality
 # for local patients and remote patients
-class Dde::MergingService
+class MergingService
   include ModelUtils
 
   attr_accessor :parent
 
-  # Initialise Dde's merging service.
+  # Initialise DdeMahis's merging service.
   #
   # Parameters:
-  #   parent: Is the parent Dde service
-  #   dde_client: Is a configured Dde client
+  #   parent: Is the parent DdeMahis service
+  #   dde_client: Is a configured DdeMahis client
   def initialize(parent, dde_client)
     @parent = parent
     @dde_client = dde_client
@@ -65,7 +65,7 @@ class Dde::MergingService
       merge_orders(primary_patient, secondary_patient, result)
       merge_visit_types(primary_patient, secondary_patient)
       merge_patient_visits(primary_patient, secondary_patient)
-      Dde::MergeAuditService.new.create_merge_audit(primary_patient.id, secondary_patient.id, merge_type) if defined?(Dde::MergeAuditService)
+      MergeAuditService.new.create_merge_audit(primary_patient.id, secondary_patient.id, merge_type) if defined?(MergeAuditService)
       secondary_patient.void("Merged into patient ##{primary_patient.id}:0")
 
       primary_patient
@@ -81,7 +81,7 @@ class Dde::MergingService
 
     national_id_type = patient_identifier_type('National id')
     old_identifier = patient_identifier_type('Old Identification Number')
-    doc_id_type = patient_identifier_type('Dde person document id')
+    doc_id_type = patient_identifier_type('DdeMahis person document id')
 
     local_patient.patient_identifiers.where(type: [national_id_type, doc_id_type, old_identifier]).each do |identifier|
       # We are now voiding all ids
@@ -93,7 +93,7 @@ class Dde::MergingService
       identifier.void("Assigned new id: #{remote_patient['doc_id']}")
     end
 
-    create_local_patient_identifier(local_patient, remote_patient['doc_id'], 'Dde person document id')
+    create_local_patient_identifier(local_patient, remote_patient['doc_id'], 'DdeMahis person document id')
     create_local_patient_identifier(local_patient, find_remote_patient_npid(remote_patient), 'National id')
 
     local_patient.reload
@@ -107,7 +107,7 @@ class Dde::MergingService
     end
 
     identifier_exists['National id',
-                      remote_patient['npid']] && identifier_exists['Dde person document id', remote_patient['doc_id']]
+                      remote_patient['npid']] && identifier_exists['DdeMahis person document id', remote_patient['doc_id']]
   end
 
   private
@@ -160,7 +160,7 @@ class Dde::MergingService
     merge_local_patients(primary_patient_ids, secondary_patient_ids, merge_type)
   end
 
-  # Merge patients in Dde and update local records if need be
+  # Merge patients in DdeMahis and update local records if need be
   def merge_remote_patients(primary_patient_ids, secondary_patient_ids)
     response, status = dde_client.post('merge_people', primary_person_doc_id: primary_patient_ids['doc_id'],
                                                        secondary_person_doc_id: secondary_patient_ids['doc_id'])
@@ -183,7 +183,7 @@ class Dde::MergingService
                                           preferred: 1)
     return patient.reload && identifier if identifier.errors.empty?
 
-    raise "Could not save Dde identifier: #{type_name} due to #{identifier.errors.as_json}"
+    raise "Could not save DdeMahis identifier: #{type_name} due to #{identifier.errors.as_json}"
   end
 
   # Patch primary_patient missing name data using secondary_patient
@@ -641,7 +641,7 @@ class Dde::MergingService
   def reassign_remote_patient_npid(patient_doc_id)
     response, status = dde_client.post('reassign_npid', { doc_id: patient_doc_id })
 
-    raise "Failed to reassign remote patient npid: Dde Response => #{status} - #{response}" unless status == 200
+    raise "Failed to reassign remote patient npid: DdeMahis Response => #{status} - #{response}" unless status == 200
 
     response
   end
@@ -651,7 +651,7 @@ class Dde::MergingService
     return npid unless npid.blank?
 
     remote_patient['identifiers'].each do |identifier|
-      # NOTE: Dde returns identifiers as either a list of maps of
+      # NOTE: DdeMahis returns identifiers as either a list of maps of
       # identifier_type => identifier or simply a map of
       # identifier_type => identifier. In the latter case the NPID is
       # not included in the identifiers object hence returning nil.
@@ -664,11 +664,11 @@ class Dde::MergingService
     nil
   end
 
-  # Convert a Dde person to an openmrs person.
+  # Convert a DdeMahis person to an openmrs person.
   #
   # NOTE: This creates a person on the database.
   def save_remote_patient(remote_patient)
-    LOGGER.debug "Converting Dde person to openmrs: #{remote_patient}"
+    LOGGER.debug "Converting DdeMahis person to openmrs: #{remote_patient}"
 
     person = person_service.create_person(
       birthdate: remote_patient['birthdate'],

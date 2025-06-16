@@ -1,4 +1,4 @@
-module Dde
+module DdeMahis
   module ApplicationHelper
   end
 end
