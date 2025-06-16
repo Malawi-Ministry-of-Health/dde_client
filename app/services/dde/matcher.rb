@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class DdeService
+module Dde
   ##
   # Matches local and remote (Dde) people.
   #
   # TODO: Move module to own file
-  module Matcher
+  class Matcher
     class << self
       def find_differences(local_person, remote_person)
         FIELDS_TO_MATCH
