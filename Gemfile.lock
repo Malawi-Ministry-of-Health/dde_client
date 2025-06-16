@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dde (0.1.4)
+    dde_mahis (0.1.4)
       rails (>= 7.0.8)
       rest-client
       sqlite3
@@ -86,25 +86,30 @@ GEM
     base64 (0.2.0)
     bigdecimal (3.1.6)
     builder (3.2.4)
+    cgi (0.3.6)
     concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
     crass (1.0.6)
-    date (3.3.4)
+    date (3.4.1)
     domain_name (0.6.20240107)
     drb (2.2.0)
       ruby2_keywords
+    erb (4.0.2)
+      cgi (>= 0.3.3)
     erubi (1.12.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
     http-accept (1.7.0)
-    http-cookie (1.0.5)
+    http-cookie (1.0.8)
       domain_name (~> 0.5)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
-    io-console (0.7.2)
-    irb (1.11.2)
-      rdoc
+    io-console (0.8.0)
+    irb (1.15.2)
+      pp (>= 0.6.0)
+      rdoc (>= 4.0.0)
       reline (>= 0.4.2)
+    logger (1.7.0)
     loofah (2.22.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -113,27 +118,32 @@ GEM
       net-imap
       net-pop
       net-smtp
-    marcel (1.0.2)
-    mime-types (3.5.2)
-      mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.0206)
+    marcel (1.0.4)
+    mime-types (3.7.0)
+      logger
+      mime-types-data (~> 3.2025, >= 3.2025.0507)
+    mime-types-data (3.2025.0603)
     mini_mime (1.1.5)
     minitest (5.22.2)
     mutex_m (0.2.0)
-    net-imap (0.4.10)
+    net-imap (0.5.8)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0.1)
+    net-smtp (0.5.1)
       net-protocol
     netrc (0.11.0)
     nio4r (2.7.0)
     nokogiri (1.16.2-x86_64-linux)
       racc (~> 1.4)
-    psych (5.1.2)
+    pp (0.6.2)
+      prettyprint
+    prettyprint (0.2.0)
+    psych (5.2.6)
+      date
       stringio
     puma (6.4.2)
       nio4r (~> 2.0)
@@ -143,9 +153,8 @@ GEM
       rack (>= 3.0.0)
     rack-test (2.1.0)
       rack (>= 1.3)
-    rackup (2.1.0)
+    rackup (2.2.1)
       rack (>= 3)
-      webrick (~> 1.8)
     rails (7.1.3)
       actioncable (= 7.1.3)
       actionmailbox (= 7.1.3)
@@ -175,10 +184,11 @@ GEM
       rake (>= 12.2)
       thor (~> 1.0, >= 1.2.2)
       zeitwerk (~> 2.6)
-    rake (13.1.0)
-    rdoc (6.6.2)
+    rake (13.2.1)
+    rdoc (6.14.0)
+      erb
       psych (>= 4.0.0)
-    reline (0.4.2)
+    reline (0.6.1)
       io-console (~> 0.5)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
@@ -194,22 +204,22 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.7.2-x86_64-linux)
-    stringio (3.1.0)
-    thor (1.3.0)
-    timeout (0.4.1)
+    stringio (3.0.4)
+    thor (1.3.2)
+    timeout (0.4.3)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    webrick (1.8.1)
-    websocket-driver (0.7.6)
+    websocket-driver (0.8.0)
+      base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    zeitwerk (2.6.13)
+    zeitwerk (2.7.3)
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  dde!
+  dde_mahis!
   puma
   sprockets-rails
   sqlite3
