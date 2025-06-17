@@ -18,7 +18,7 @@ class RollbackService
         @merge_type = record['merge_type']
         Rails.logger.debug("Processing rollback for patients: #{primary_patient} <=> #{secondary_patient}")
         process_rollback
-        MergeAudit.find(record['id']).void("Rolling back to #{secondary_patient}")
+        ::MergeAudit.find(record['id']).void("Rolling back to #{secondary_patient}")
         @common_void_reason = nil
       end
     end
