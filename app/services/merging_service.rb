@@ -81,7 +81,7 @@ class MergingService
 
     national_id_type = patient_identifier_type('National id')
     old_identifier = patient_identifier_type('Old Identification Number')
-    doc_id_type = patient_identifier_type('DdeMahis person document id')
+    doc_id_type = patient_identifier_type('Dde Person Document ID')
 
     local_patient.patient_identifiers.where(type: [national_id_type, doc_id_type, old_identifier]).each do |identifier|
       # We are now voiding all ids
@@ -93,7 +93,7 @@ class MergingService
       identifier.void("Assigned new id: #{remote_patient['doc_id']}")
     end
 
-    create_local_patient_identifier(local_patient, remote_patient['doc_id'], 'DdeMahis person document id')
+    create_local_patient_identifier(local_patient, remote_patient['doc_id'], 'Dde Person Document ID')
     create_local_patient_identifier(local_patient, find_remote_patient_npid(remote_patient), 'National id')
 
     local_patient.reload
@@ -107,7 +107,7 @@ class MergingService
     end
 
     identifier_exists['National id',
-                      remote_patient['npid']] && identifier_exists['DdeMahis person document id', remote_patient['doc_id']]
+                      remote_patient['npid']] && identifier_exists['Dde Person Document ID', remote_patient['doc_id']]
   end
 
   private

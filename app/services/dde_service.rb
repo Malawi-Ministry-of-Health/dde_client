@@ -48,8 +48,8 @@ class DdeService
   # Registers local OpenMRS patient in DdeMahis
   #
   # On success patient get two identifiers under the types
-  # 'DdeMahis person document ID' and 'National id'. The
-  # 'DdeMahis person document ID' is the patient's record ID in the local
+  # 'Dde Person Document ID' and 'National id'. The
+  # 'Dde Person Document ID' is the patient's record ID in the local
   # DdeMahis instance and the 'National ID' is the national unique identifier
   # for the patient.
   def create_patient(patient)
@@ -139,7 +139,7 @@ class DdeService
 
   # Import patients from DdeMahis using doc id
   def import_patients_by_doc_id(doc_id)
-    doc_id_type = patient_identifier_type('DdeMahis person document id')
+    doc_id_type = patient_identifier_type('Dde Person Document ID')
     locals = patient_service.find_patients_by_identifier(doc_id, doc_id_type).limit(PATIENT_SEARCH_RESULTS_LIMIT)
     remotes = find_remote_patients_by_doc_id(doc_id)
 
@@ -189,7 +189,7 @@ class DdeService
   end
 
   def find_patient_updates(local_patient_id)
-    dde_doc_id_type = PatientIdentifierType.where(name: 'DdeMahis Person Document ID')
+    dde_doc_id_type = PatientIdentifierType.where(name: 'Dde Person Document ID')
     doc_id = PatientIdentifier.find_by(patient_id: local_patient_id, identifier_type: dde_doc_id_type)
                               &.identifier
     return nil unless doc_id
@@ -225,7 +225,7 @@ class DdeService
     response.collect do |match|
       doc_id = match['person']['id']
       patient = patient_service.find_patients_by_identifier(
-        doc_id, patient_identifier_type('DdeMahis person document id')
+        doc_id, patient_identifier_type('Dde Person Document ID')
       ).first
       match['person']['patient_id'] = patient&.id
       match
@@ -455,7 +455,7 @@ class DdeService
   # Checks if patient only exists on local database
   def local_only_patient?(patient)
     !(patient.patient_identifiers.where(identifier_type: patient_identifier_type('National id')).exists?\
-      && patient.patient_identifiers.where(identifier_type: patient_identifier_type('DdeMahis person document id')).exists?)
+      && patient.patient_identifiers.where(identifier_type: patient_identifier_type('Dde Person Document ID')).exists?)
   end
 
   # Matches local and remote patient
@@ -501,7 +501,7 @@ class DdeService
     [PatientIdentifier.new(identifier: remote_patient['npid'],
                            identifier_type: patient_identifier_type('National ID')),
      PatientIdentifier.new(identifier: remote_patient['doc_id'],
-                           identifier_type: patient_identifier_type('DdeMahis Person Document ID'))]
+                           identifier_type: patient_identifier_type('Dde Person Document ID'))]
   end
 
   def localise_remote_patient_names(remote_patient)
@@ -578,7 +578,7 @@ class DdeService
       }
     )
 
-    doc_id = patient.patient_identifiers.where(identifier_type: patient_identifier_type('DdeMahis person document id')).first
+    doc_id = patient.patient_identifiers.where(identifier_type: patient_identifier_type('Dde Person Document ID')).first
     dde_patient[:doc_id] = doc_id.identifier if doc_id
 
     LOGGER.debug "Converted openmrs person to dde_patient: #{dde_patient}"
@@ -607,19 +607,19 @@ class DdeService
   def patient_doc_id(patient)
     PatientIdentifier
       .joins(:identifier_type)
-      .merge(PatientIdentifierType.where(name: 'DdeMahis person document id'))
+      .merge(PatientIdentifierType.where(name: 'Dde Person Document ID'))
       .where(patient: patient)
       .first
       &.identifier
   end
 
   def dde_doc_id_type
-    PatientIdentifierType.find_by_name('DdeMahis Person document ID')
+    PatientIdentifierType.find_by_name('Dde Person Document ID')
   end
 
   def find_patients_by_doc_id(doc_ids)
     identifiers = PatientIdentifier.joins(:identifier_type)
-                                   .merge(PatientIdentifierType.where(name: 'DdeMahis Person Document ID'))
+                                   .merge(PatientIdentifierType.where(name: 'Dde Person Document ID'))
                                    .where(identifier: doc_ids)
     Patient.joins(:identifiers).merge(identifiers).distinct
   end

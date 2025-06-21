@@ -47,7 +47,7 @@ class RollbackService
       SELECT identifier
       FROM patient_identifier
       WHERE patient_id = #{patient_id}
-      AND identifier_type = #{PatientIdentifierType.find_by_name!('DdeMahis person document ID').id}
+      AND identifier_type = #{PatientIdentifierType.find_by_name!('Dde Person Document ID').id}
     SQL
     result.blank? ? nil : result['identifier']
   end
