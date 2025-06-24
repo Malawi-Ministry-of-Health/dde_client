@@ -486,7 +486,7 @@ class DdeService
   # to that of a local patient
   def localise_remote_patient(patient)
     Patient.new(
-      patient_identifiers: localise_remote_patient_identifiers(patient),
+      identifiers: localise_remote_patient_identifiers(patient),
       person: Person.new(
         names: localise_remote_patient_names(patient),
         addresses: localise_remote_patient_addresses(patient),
