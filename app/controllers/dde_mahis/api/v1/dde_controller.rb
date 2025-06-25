@@ -1,6 +1,8 @@
 module DdeMahis
   class Api::V1::DdeController < ApplicationController
     # GET /dde/patients
+    after_action :remove_from_aetc_list, only: [:merge_patients]
+
     def find_patients_by_npid
       npid = params.require(:npid)
       render json: service.find_patients_by_npid(npid)
@@ -89,6 +91,15 @@ module DdeMahis
 
     def visit_type
       Program.find(params.require(:visit_type_id))
+    end
+
+    def remove_from_aetc_list
+      primary_person = Person.find_by_uuid(params[:primary].first[:patient_id])
+      AetcVisitList.where(uuid: params[:secondary]
+                   .first[:patient_id])
+                   .update_all(uuid: primary_person.uuid,
+                               patient_id: primary_person.person_id,
+                               category: 'triage')
     end
   end
 end
