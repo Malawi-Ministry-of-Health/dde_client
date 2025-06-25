@@ -94,9 +94,8 @@ module DdeMahis
     end
 
     def remove_from_aetc_list
-      primary_person = Person.find_by_uuid(params[:primary].first[:patient_id])
-      AetcVisitList.where(uuid: params[:secondary]
-                   .first[:patient_id])
+      primary_person = Person.find_by(uuid: params[:primary][:patient_id])
+      AetcVisitList.where(uuid: params[:secondary].first[:patient_id])
                    .update_all(uuid: primary_person.uuid,
                                patient_id: primary_person.person_id,
                                category: 'triage')
