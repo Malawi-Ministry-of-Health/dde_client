@@ -26,6 +26,7 @@ class MergingService
   #   secondary_patient_ids_list - An array of objects like that for 'primary_patient_ids'
   #                                above
   def merge_patients(primary_patient_ids, secondary_patient_ids_list)
+    update_atec_visit_list(primary_patient_ids, secondary_patient_ids_list)
     secondary_patient_ids_list.collect do |secondary_patient_ids|
       if !dde_enabled?
         merge_local_patients(primary_patient_ids, secondary_patient_ids, 'Local Patients')
@@ -43,6 +44,26 @@ class MergingService
       end
     end.first
   end
+
+  def update_atec_visit_list(primary_patient_ids, secondary_patient_ids_list)
+    secondary_patient = secondary_patient_ids_list.first.permit(:patient_id)
+    existing_patient = AetcVisitList.find_by(uuid: secondary_patient[:patient_id])
+    return unless existing_patient
+  
+    person_id = Person.find_by(uuid: primary_patient_ids[:patient_id])&.person_id
+    return unless person_id
+  
+    person_name = PersonName.find_by(person_id: person_id)
+    return unless person_name
+  
+    patient_data_hash = {
+      given_name: person_name.given_name,
+      family_name: person_name.family_name
+    }
+  
+    existing_patient.update!(patient_data_hash)
+  end
+  
 
   # Merges @{param secondary_patient} into @{param primary_patient}.
   # rubocop:disable Metrics/MethodLength
